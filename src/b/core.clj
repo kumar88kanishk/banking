@@ -10,6 +10,7 @@
       (for [account (db)
           :let [found (select-keys account given-keys)]
           :when (= input found)]
+
         account))))
 
 (defn saving-account [account]
@@ -20,17 +21,11 @@
   (first (filter #(= "current" (:type %))
                  (:accounts account))))
 
-(defn saving-account-transactions [account]
-  (:transactions (saving-account account)))
+(defn transactions [account]
+  (:transactions account))
 
-(defn current-account-transactions [account]
-  (:transactions (current-account account)))
-
-(defn saving-account-last-transaction [account]
-  (or (last (saving-account-transactions account)) {}))
-
-(defn current-account-last-transaction [account]
-  (or (last (current-account-transactions account)) {}))
+(defn last-transaction [transactions]
+  (or (last transactions) {}))
 
 (defn last-balance [transaction]
   (or (:balance transaction) 0))
@@ -45,30 +40,32 @@
 
 
 ;(debit-in-current {:password 123 :username "kansihk" :accounts [{:type "saving" :transactions []}], :account-number "123"} 23)
-(defn merge-transactions [transaction new-balance old-balance]
-  (conj transaction (hash-map :new-balance new-balance :old-balance old-balance)))
+(defn merge-transactions [transaction new-transaction]
+  (conj transaction new-transaction))
+
+(defn new-transaction [amount type balance]
+  (hash-map :type type :balance balance :amount amount))
 
 (defn refresh-account [account new-transactions]
-  (conj (:accounts account) new-transactions))
+  (assoc account :transactions new-transactions))
 
-(defn transact [inputs type]
+(defn transact [inputs action]
   (let [valid-account (is-valid-account inputs)]
-    (print valid-account)
-    (case (:action type)
+    (case (:action action)
       "credit-in-saving" (do
-                           (let [new-balance (credit (saving-account-last-transaction valid-account) (:amount type))]
-                             (let [new-transaction (merge-transactions (saving-account-transactions valid-account) new-balance (last-balance valid-account))]
-                               (refresh-account (saving-account-transactions valid-account) new-transaction))))
-      "debit-in-saving" (debit  (saving-account-last-transaction valid-account ) (:amount type))
-      "credit-in-current" (credit (current-account-last-transaction valid-account ) (:amount type))
-      "debit-in-current" (debit (current-account-last-transaction valid-account ) (:amount type)))))
+                           (let [new-balance (credit (last-transaction (saving-account valid-account)) (:amount action))]
+                             (let [new-transaction (new-transaction (:amount action) "credit" new-balance)]
+                               (let [merge-transactions (merge-transactions (transactions (saving-account valid-account)) new-transaction)]
+                                 (let [updated-account (refresh-account (saving-account valid-account) merge-transactions)]
+                                   updated-account)))))
+      "debit-in-saving" (debit  (last-transaction (saving-account valid-account)) (:amount action))
+      "credit-in-current" (credit (last-transaction (current-account valid-account)) (:amount action))
+      "debit-in-current" (debit (last-transaction (current-account valid-account)) (:amount action)))))
 
 
 (defn login [inputs type]
   (let [valid-account (is-valid-account inputs)]
-    (case (:account-type type)
-      "saving" (saving-account-transactions valid-account)
-      "current" (current-account-transactions valid-account))))
+    valid-account))
 
 (defn prepare-registration-attributes [account]
   (let [account-number (reduce str (set (take 6 (repeatedly #(rand-int 9)))))]
@@ -84,4 +81,11 @@
 (register-account {:username "kanishk" :password "123"})
 (transact {:username "kanishk" :password "123"} {:action "credit-in-saving" :amount 12})
 
-(conj {:a "b"} {:a "c"})
+(conj {:a "b" :c [{:a "b"}]} {:c [{:b "x"}]})
+(assoc [1 2 3] 1 0)
+
+(.indexOf (db) {:account-number "07435",
+                :password "123",
+                :username "kanishk",
+                :accounts [{:type "saving", :transactions [{:type "credit", :amount 123, :balance 123}]}],
+                })

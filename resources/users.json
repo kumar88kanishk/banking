@@ -1,0 +1,21 @@
+[{
+  "password": "123",
+  "username": "kanishk",
+  "accounts": [{
+    "type": "saving",
+    "transactions": [{
+      "type": "credit",
+      "amount": 123,
+      "balance": 123
+    }]
+  }],
+  "account-number": "07435"
+},{
+  "password": "1231",
+  "username": "kanishk1",
+  "accounts": [{
+    "type": "saving",
+    "transactions": []
+  }],
+  "account-number": "0007435"
+}]
