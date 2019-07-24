@@ -8,6 +8,13 @@
       "amount": 123,
       "balance": 123
     }]
+  },{
+    "type": "current",
+    "transactions": [{
+      "type": "credit",
+      "amount": 0,
+      "balance": 10
+    }]
   }],
   "account-number": "07435"
 },{

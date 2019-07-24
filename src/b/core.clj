@@ -13,13 +13,13 @@
 
         account))))
 
-(defn saving-account [account]
+(defn saving-account [user]
   (first (filter #(= "saving" (:type %))
-                 (:accounts account))))
+                 (:accounts user))))
 
-(defn current-account [account]
+(defn current-account [user]
   (first (filter #(= "current" (:type %))
-                 (:accounts account))))
+                 (:accounts user))))
 
 (defn transactions [account]
   (:transactions account))
@@ -38,34 +38,38 @@
   (let [last-balance (last-balance account)]
     (- last-balance amount)))
 
-
-;(debit-in-current {:password 123 :username "kansihk" :accounts [{:type "saving" :transactions []}], :account-number "123"} 23)
 (defn merge-transactions [transaction new-transaction]
   (conj transaction new-transaction))
 
 (defn new-transaction [amount type balance]
   (hash-map :type type :balance balance :amount amount))
 
-(defn refresh-account [account new-transactions]
-  (assoc account :transactions new-transactions))
+(defn refresh-account [ user account new-transactions]
+  (let [updated-account (assoc account :transactions new-transactions)]
+    (let [account-index (.indexOf (:accounts user) account)]
+      (assoc (db) (.indexOf (db) user) (merge user (:accounts (assoc (:accounts user) account-index updated-account)))))))
+
+(defn write-in-db [data]
+  (print data "aaasdasdads")
+  (spit "src/accounts.json" (json/write-str data)))
 
 (defn transact [inputs action]
-  (let [valid-account (is-valid-account inputs)]
+  (let [valid-user (is-valid-account inputs)]
     (case (:action action)
       "credit-in-saving" (do
-                           (let [new-balance (credit (last-transaction (saving-account valid-account)) (:amount action))]
+                           (let [new-balance (credit (last-transaction (transactions (saving-account valid-user))) (:amount action))]
                              (let [new-transaction (new-transaction (:amount action) "credit" new-balance)]
-                               (let [merge-transactions (merge-transactions (transactions (saving-account valid-account)) new-transaction)]
-                                 (let [updated-account (refresh-account (saving-account valid-account) merge-transactions)]
-                                   updated-account)))))
-      "debit-in-saving" (debit  (last-transaction (saving-account valid-account)) (:amount action))
-      "credit-in-current" (credit (last-transaction (current-account valid-account)) (:amount action))
-      "debit-in-current" (debit (last-transaction (current-account valid-account)) (:amount action)))))
+                               (let [merge-transactions (merge-transactions (transactions (saving-account valid-user)) new-transaction)]
+                                 (let [updated-user-account (refresh-account valid-user (saving-account valid-user) merge-transactions)]
+                                   (write-in-db updated-user-account))))))
+      "debit-in-saving" (debit  (last-transaction (saving-account valid-user)) (:amount action))
+      "credit-in-current" (credit (last-transaction (current-account valid-user)) (:amount action))
+      "debit-in-current" (debit (last-transaction (current-account valid-user)) (:amount action)))))
 
 
-(defn login [inputs type]
-  (let [valid-account (is-valid-account inputs)]
-    valid-account))
+(defn login [inputs]
+  (let [valid-user (is-valid-account inputs)]
+    valid-user))
 
 (defn prepare-registration-attributes [account]
   (let [account-number (reduce str (set (take 6 (repeatedly #(rand-int 9)))))]
@@ -74,15 +78,16 @@
               :password (:password account)
               :accounts (vector (hash-map :transactions [] :type "saving"))
               )))
+
 (defn register-account [account]
   (spit "src/accounts.json" (json/write-str (prepare-registration-attributes account))))
 
-(login {:username "kanishk" :password "123"} {:account-type "saving"})
+(login {:username "kanishk" :password "123"})
 (register-account {:username "kanishk" :password "123"})
 (transact {:username "kanishk" :password "123"} {:action "credit-in-saving" :amount 12})
 
 (conj {:a "b" :c [{:a "b"}]} {:c [{:b "x"}]})
-(assoc [1 2 3] 1 0)
+(assoc ["a" "b" "c"] 0 2)
 
 (.indexOf (db) {:account-number "07435",
                 :password "123",

@@ -1,1 +1,1 @@
-{"password":"123","username":"kanishk","accounts":[{"type":"saving","transactions":[]}],"account-number":"0638"}
+[{"password":"123","username":"kanishk","accounts":[{"type":"saving","transactions":[{"type":"credit","amount":123,"balance":123}]},{"type":"current","transactions":[{"type":"credit","amount":0,"balance":10}]}],"account-number":"07435"},{"password":"1231","username":"kanishk1","accounts":[{"type":"saving","transactions":[]}],"account-number":"0007435"}]
